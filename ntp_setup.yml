@@ -2,40 +2,34 @@
 - name: Configurar NTP en Servidor y Clientes
   hosts: all
   become: yes
+  gather_facts: no  # Desactiva la recopilación de datos para evitar el requisito de Python
 
   tasks:
-    - name: Actualizar el sistema en nodos que lo soporten
-      ansible.builtin.yum:
-        name: "*"
-        state: latest
-      tags: update_system
-      when: "'freeipa' in group_names"
+    - name: Verificar sistema operativo en FreeIPA para asegurarse de que es compatible
+      ansible.builtin.raw: "hostnamectl"
+      register: os_check
+      ignore_errors: true
 
-    - name: Instalar chrony en FreeIPA (Servidor NTP)
-      ansible.builtin.package:
-        name: chrony
-        state: present
-      when: "'freeipa' in group_names"
+    - name: Instalar chrony en FreeIPA (Servidor NTP) si es Rocky Linux
+      ansible.builtin.raw: "dnf install -y chrony"
+      when: "'Rocky Linux' in os_check.stdout" and "'freeipa' in group_names"
 
     - name: Configurar chrony en FreeIPA
-      ansible.builtin.template:
-        src: templates/chrony.conf.j2
-        dest: /etc/chrony.conf
+      ansible.builtin.raw: |
+        echo 'pool europe.pool.ntp.org iburst
+        server 10.17.3.11 iburst prefer' > /etc/chrony.conf
       when: "'freeipa' in group_names"
 
     - name: Iniciar y habilitar chronyd en FreeIPA
-      ansible.builtin.service:
-        name: chronyd
-        enabled: yes
-        state: started
+      ansible.builtin.raw: |
+        systemctl enable chronyd --now
+        systemctl start chronyd
       when: "'freeipa' in group_names"
 
     - name: Abrir puerto NTP en el firewall de FreeIPA
-      ansible.builtin.firewalld:
-        service: ntp
-        permanent: yes
-        state: enabled
-        immediate: yes
+      ansible.builtin.raw: |
+        firewall-cmd --permanent --add-service=ntp
+        firewall-cmd --reload
       when: "'freeipa' in group_names"
 
     - name: Comprobar si systemd-timesyncd está disponible en los clientes (Fedora CoreOS)
