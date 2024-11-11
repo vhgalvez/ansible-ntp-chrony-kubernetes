@@ -23,8 +23,8 @@
         dest: /etc/chrony.conf
         content: |
           pool europe.pool.ntp.org iburst
+          server 10.17.3.11 iburst prefer
           allow 10.17.0.0/16
-          local stratum 10  # Para asegurar que sea un servidor NTP en caso de perder conexión externa
       notify:
         - Reiniciar chronyd
 
