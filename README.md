@@ -40,6 +40,7 @@ Crea un archivo de inventario (`inventory.ini`) para especificar tus nodos. A co
 10.17.3.14 ansible_user=<nombre_usuario> ansible_ssh_private_key_file=<ruta_clave_ssh>
 ```
 
+
 ### Resumen de Recursos para Máquinas Virtuales
 
 | Nombre de VM      | CPU | Memoria (MB) | IP           | Nombre de Dominio                 | Tamaño de Disco (GB) | Hostname     |
