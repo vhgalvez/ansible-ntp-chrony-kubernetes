@@ -10,27 +10,31 @@
       register: os_check
       ignore_errors: true
 
+    - name: Mostrar información de sistema operativo (para depuración)
+      debug:
+        var: os_check.stdout
+
     - name: Instalar chrony en FreeIPA (Servidor NTP) si es Rocky Linux
       ansible.builtin.raw: "dnf install -y chrony"
-      when: ("Rocky Linux" in os_check.stdout) and ("freeipa" in group_names)
+      when: "'Rocky Linux' in os_check.stdout and 'freeipa_servers' in group_names"
 
     - name: Configurar chrony en FreeIPA
       ansible.builtin.raw: |
         echo 'pool europe.pool.ntp.org iburst
         server 10.17.3.11 iburst prefer' > /etc/chrony.conf
-      when: "'freeipa' in group_names"
+      when: "'freeipa_servers' in group_names"
 
     - name: Iniciar y habilitar chronyd en FreeIPA
       ansible.builtin.raw: |
         systemctl enable chronyd --now
         systemctl start chronyd
-      when: "'freeipa' in group_names"
+      when: "'freeipa_servers' in group_names"
 
     - name: Abrir puerto NTP en el firewall de FreeIPA
       ansible.builtin.raw: |
         firewall-cmd --permanent --add-service=ntp
         firewall-cmd --reload
-      when: "'freeipa' in group_names"
+      when: "'freeipa_servers' in group_names"
 
     - name: Comprobar si systemd-timesyncd está disponible en los clientes (Fedora CoreOS)
       ansible.builtin.raw: "systemctl status systemd-timesyncd"
