@@ -4,11 +4,12 @@
   become: yes
 
   tasks:
-    - name: Actualizar el sistema
+    - name: Actualizar el sistema en nodos que lo soporten
       ansible.builtin.yum:
         name: "*"
         state: latest
       tags: update_system
+      when: "'freeipa' in group_names"
 
     - name: Instalar chrony en FreeIPA (Servidor NTP)
       ansible.builtin.package:
@@ -37,8 +38,8 @@
         immediate: yes
       when: "'freeipa' in group_names"
 
-    - name: Comprobar si systemd-timesyncd está disponible en los clientes
-      command: systemctl status systemd-timesyncd
+    - name: Comprobar si systemd-timesyncd está disponible en los clientes (Fedora CoreOS)
+      ansible.builtin.raw: "systemctl status systemd-timesyncd"
       register: timesyncd_check
       ignore_errors: true
       when: "'clients' in group_names"
@@ -46,20 +47,14 @@
     - name: Configurar systemd-timesyncd en los clientes si está disponible
       block:
         - name: Configurar systemd-timesyncd
-          ansible.builtin.copy:
-            content: |
-              [Time]
-              NTP=10.17.3.11
-              FallbackNTP=0.pool.ntp.org
-            dest: /etc/systemd/timesyncd.conf
+          ansible.builtin.raw: |
+            echo '[Time]
+            NTP=10.17.3.11
+            FallbackNTP=0.pool.ntp.org' > /etc/systemd/timesyncd.conf
 
-        - name: Reiniciar systemd-timesyncd
-          ansible.builtin.service:
-            name: systemd-timesyncd
-            state: restarted
+        - name: Reiniciar systemd-timesyncd en clientes
+          ansible.builtin.raw: "systemctl restart systemd-timesyncd"
 
-        - name: Habilitar systemd-timesyncd
-          ansible.builtin.service:
-            name: systemd-timesyncd
-            enabled: yes
+        - name: Habilitar systemd-timesyncd en clientes
+          ansible.builtin.raw: "systemctl enable systemd-timesyncd"
       when: timesyncd_check is defined and timesyncd_check.rc == 0
