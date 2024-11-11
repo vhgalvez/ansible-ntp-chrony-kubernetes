@@ -1,0 +1,53 @@
+---
+- name: Configurar NTP en Servidor y Clientes
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Instalar chrony en FreeIPA (Servidor NTP)
+      ansible.builtin.package:
+        name: chrony
+        state: present
+      when: "'freeipa' in group_names"
+
+    - name: Configurar chrony en FreeIPA
+      ansible.builtin.template:
+        src: templates/chrony.conf.j2
+        dest: /etc/chrony.conf
+      when: "'freeipa' in group_names"
+
+    - name: Iniciar y habilitar chronyd en FreeIPA
+      ansible.builtin.service:
+        name: chronyd
+        enabled: yes
+        state: started
+      when: "'freeipa' in group_names"
+
+    - name: Abrir puerto NTP en el firewall de FreeIPA
+      ansible.builtin.firewalld:
+        service: ntp
+        permanent: yes
+        state: enabled
+        immediate: yes
+      when: "'freeipa' in group_names"
+
+    - name: Instalar y configurar systemd-timesyncd en los clientes
+      ansible.builtin.block:
+        - name: Configurar systemd-timesyncd en clientes
+          ansible.builtin.copy:
+            content: |
+              [Time]
+              NTP=10.17.3.11
+              FallbackNTP=0.pool.ntp.org
+            dest: /etc/systemd/timesyncd.conf
+
+        - name: Reiniciar systemd-timesyncd en clientes
+          ansible.builtin.service:
+            name: systemd-timesyncd
+            state: restarted
+
+        - name: Habilitar systemd-timesyncd en clientes
+          ansible.builtin.service:
+            name: systemd-timesyncd
+            enabled: yes
+      when: "'clients' in group_names"
