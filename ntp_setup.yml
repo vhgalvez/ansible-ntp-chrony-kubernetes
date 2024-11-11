@@ -12,7 +12,7 @@
 
     - name: Instalar chrony en FreeIPA (Servidor NTP) si es Rocky Linux
       ansible.builtin.raw: "dnf install -y chrony"
-      when: "'Rocky Linux' in os_check.stdout" and "'freeipa' in group_names"
+      when: ("Rocky Linux" in os_check.stdout) and ("freeipa" in group_names)
 
     - name: Configurar chrony en FreeIPA
       ansible.builtin.raw: |
