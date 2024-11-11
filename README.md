@@ -123,4 +123,4 @@ Este proyecto está licenciado bajo la Licencia MIT.
 
 ## Autor
 
-Tu Nombre [https://github.com/vhgalvez](https://github.com/vhgalvez)
+Victor Galvez [https://github.com/vhgalvez](https://github.com/vhgalvez)
