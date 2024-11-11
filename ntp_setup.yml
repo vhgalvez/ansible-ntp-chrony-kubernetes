@@ -32,7 +32,8 @@
       when: "'freeipa' in group_names"
 
     - name: Instalar y configurar systemd-timesyncd en los clientes
-      ansible.builtin.block:
+      when: "'clients' in group_names"
+      block:
         - name: Configurar systemd-timesyncd en clientes
           ansible.builtin.copy:
             content: |
@@ -50,4 +51,3 @@
           ansible.builtin.service:
             name: systemd-timesyncd
             enabled: yes
-      when: "'clients' in group_names"
