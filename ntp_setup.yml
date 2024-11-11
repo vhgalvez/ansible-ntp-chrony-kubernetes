@@ -31,10 +31,15 @@
         immediate: yes
       when: "'freeipa' in group_names"
 
-    - name: Instalar y configurar systemd-timesyncd en los clientes
+    - name: Comprobar si systemd-timesyncd está disponible en los clientes
+      command: systemctl status systemd-timesyncd
+      register: timesyncd_check
+      ignore_errors: true
       when: "'clients' in group_names"
+
+    - name: Configurar systemd-timesyncd en los clientes si está disponible
       block:
-        - name: Configurar systemd-timesyncd en clientes
+        - name: Configurar systemd-timesyncd
           ansible.builtin.copy:
             content: |
               [Time]
@@ -42,12 +47,13 @@
               FallbackNTP=0.pool.ntp.org
             dest: /etc/systemd/timesyncd.conf
 
-        - name: Reiniciar systemd-timesyncd en clientes
+        - name: Reiniciar systemd-timesyncd
           ansible.builtin.service:
             name: systemd-timesyncd
             state: restarted
 
-        - name: Habilitar systemd-timesyncd en clientes
+        - name: Habilitar systemd-timesyncd
           ansible.builtin.service:
             name: systemd-timesyncd
             enabled: yes
+      when: timesyncd_check.rc == 0
