@@ -2,7 +2,7 @@
 - name: Configurar NTP en el Servidor FreeIPA
   hosts: freeipa_servers
   become: yes
-  gather_facts: no  # Desactiva la recopilación de datos para evitar el requisito de Python
+  gather_facts: no # Desactiva la recopilación de datos para evitar el requisito de Python
 
   tasks:
     - name: Verificar sistema operativo en FreeIPA para asegurarse de que es compatible
@@ -18,17 +18,31 @@
       ansible.builtin.raw: "dnf install -y chrony"
       when: "'Rocky Linux' in os_check.stdout"
 
-    - name: Configurar chrony en FreeIPA
-      ansible.builtin.raw: |
-        echo 'pool europe.pool.ntp.org iburst
-        server 10.17.3.11 iburst prefer' > /etc/chrony.conf
+    - name: Configurar chrony en FreeIPA para servir como NTP y permitir acceso a la red
+      ansible.builtin.copy:
+        dest: /etc/chrony.conf
+        content: |
+          pool europe.pool.ntp.org iburst
+          allow 10.17.0.0/16
+          local stratum 10  # Para asegurar que sea un servidor NTP en caso de perder conexión externa
+      notify:
+        - Reiniciar chronyd
 
     - name: Iniciar y habilitar chronyd en FreeIPA
-      ansible.builtin.raw: |
-        systemctl enable chronyd --now
-        systemctl start chronyd
+      ansible.builtin.systemd:
+        name: chronyd
+        enabled: true
+        state: started
 
     - name: Abrir puerto NTP en el firewall de FreeIPA
-      ansible.builtin.raw: |
-        firewall-cmd --permanent --add-service=ntp
-        firewall-cmd --reload
+      ansible.builtin.firewalld:
+        service: ntp
+        permanent: true
+        immediate: yes
+        state: enabled
+
+  handlers:
+    - name: Reiniciar chronyd
+      ansible.builtin.systemd:
+        name: chronyd
+        state: restarted
