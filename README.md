@@ -191,7 +191,7 @@ Estos comandos cubren las verificaciones esenciales para mantener y solucionar p
 
 ### Servidor NTP
 
-![Servidor NTP](ntp.png)
+![Servidor NTP](ntp_setup.png)
 
 ### Cliente NTP Nodo Worker 1 Sincronizado
 
