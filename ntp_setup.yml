@@ -1,6 +1,6 @@
 ---
-- name: Configurar NTP en Servidor y Clientes
-  hosts: all
+- name: Configurar NTP en el Servidor FreeIPA
+  hosts: freeipa_servers
   become: yes
   gather_facts: no  # Desactiva la recopilación de datos para evitar el requisito de Python
 
@@ -16,43 +16,19 @@
 
     - name: Instalar chrony en FreeIPA (Servidor NTP) si es Rocky Linux
       ansible.builtin.raw: "dnf install -y chrony"
-      when: "'Rocky Linux' in os_check.stdout and 'freeipa_servers' in group_names"
+      when: "'Rocky Linux' in os_check.stdout"
 
     - name: Configurar chrony en FreeIPA
       ansible.builtin.raw: |
         echo 'pool europe.pool.ntp.org iburst
         server 10.17.3.11 iburst prefer' > /etc/chrony.conf
-      when: "'freeipa_servers' in group_names"
 
     - name: Iniciar y habilitar chronyd en FreeIPA
       ansible.builtin.raw: |
         systemctl enable chronyd --now
         systemctl start chronyd
-      when: "'freeipa_servers' in group_names"
 
     - name: Abrir puerto NTP en el firewall de FreeIPA
       ansible.builtin.raw: |
         firewall-cmd --permanent --add-service=ntp
         firewall-cmd --reload
-      when: "'freeipa_servers' in group_names"
-
-    - name: Comprobar si systemd-timesyncd está disponible en los clientes (Fedora CoreOS)
-      ansible.builtin.raw: "systemctl status systemd-timesyncd"
-      register: timesyncd_check
-      ignore_errors: true
-      when: "'clients' in group_names"
-
-    - name: Configurar systemd-timesyncd en los clientes si está disponible
-      block:
-        - name: Configurar systemd-timesyncd
-          ansible.builtin.raw: |
-            echo '[Time]
-            NTP=10.17.3.11
-            FallbackNTP=0.pool.ntp.org' > /etc/systemd/timesyncd.conf
-
-        - name: Reiniciar systemd-timesyncd en clientes
-          ansible.builtin.raw: "systemctl restart systemd-timesyncd"
-
-        - name: Habilitar systemd-timesyncd en clientes
-          ansible.builtin.raw: "systemctl enable systemd-timesyncd"
-      when: timesyncd_check is defined and timesyncd_check.rc == 0
