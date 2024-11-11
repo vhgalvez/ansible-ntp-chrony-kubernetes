@@ -56,6 +56,18 @@ Crea un archivo de inventario (`inventory.ini`) para especificar tus nodos. A co
 | postgresql1      | 2   | 2048         | 10.17.3.13   | postgresql1.cefaslocalserver.com  | 32                   | postgresql1  |
 | helper           | 2   | 2048         | 10.17.3.14   | helper.cefaslocalserver.com       | 32                   | helper_node  |
 
+### Resumen de Recursos para Nodos de Kubernetes
+
+| Nodo               | Sistema Operativo       | Función                                    | Cantidad |
+| ------------------ | ----------------------- | ------------------------------------------ | -------- |
+| Load Balancer Node | Rocky Linux             | Balanceo de tráfico con Traefik            | 1        |
+| FreeIPA Node       | Rocky Linux             | DNS y autenticación                        | 1        |
+| PostgreSQL Node    | Rocky Linux             | Base de datos central para microservicios  | 1        |
+| Master Node        | Flatcar Container Linux | Administración de API de Kubernetes        | 3        |
+| Worker Nodes       | Flatcar Container Linux | Ejecución de microservicios y aplicaciones | 3        |
+| Bootstrap Node     | Flatcar Container Linux | Nodo inicial para configurar el clúster    | 1        |
+
+
 ## Uso
 
 1. **Clonar el Repositorio**
@@ -116,6 +128,9 @@ sudo chronyc sources -v
 # En los clientes
 timedatectl status
 ```
+
+
+
 
 ## Licencia
 
