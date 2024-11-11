@@ -4,6 +4,12 @@
   become: yes
 
   tasks:
+    - name: Actualizar el sistema
+      ansible.builtin.yum:
+        name: "*"
+        state: latest
+      tags: update_system
+
     - name: Instalar chrony en FreeIPA (Servidor NTP)
       ansible.builtin.package:
         name: chrony
@@ -56,4 +62,4 @@
           ansible.builtin.service:
             name: systemd-timesyncd
             enabled: yes
-      when: timesyncd_check.rc == 0
+      when: timesyncd_check is defined and timesyncd_check.rc == 0
