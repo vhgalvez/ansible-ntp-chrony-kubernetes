@@ -24,10 +24,7 @@
         dest: /etc/chrony.conf
         content: |
           pool europe.pool.ntp.org iburst
-          server time.netzwerge.de iburst prefer
-          server x1.ncomputers.org iburst
-          server mail.somenet.org iburst
-          server ip99.mikrocom.sk iburst
+          server 10.17.3.11 iburst prefer
           allow 10.17.3.0/24
           allow 10.17.4.0/24
           local stratum 10
@@ -40,7 +37,7 @@
         enabled: true
         state: started
 
-    - name: Abrir puerto NTP en el firewall de FreeIPA
+    - name: Abrir puerto NTP en el firewall de FreeIPA (firewalld)
       ansible.builtin.firewalld:
         service: ntp
         permanent: true
@@ -48,14 +45,24 @@
         state: enabled
 
     - name: Verificar si nftables está en uso
-      ansible.builtin.command: "nft list ruleset"
-      register: nft_status
-      ignore_errors: true
+      ansible.builtin.command: "nft list tables"
+      register: nft_tables
       changed_when: false
+      ignore_errors: true
+
+    - name: Crear tabla filter en nftables si no existe
+      ansible.builtin.command: "nft add table ip filter"
+      when: "'filter' not in nft_tables.stdout"
+      ignore_errors: true
+
+    - name: Crear cadena input en nftables si no existe
+      ansible.builtin.command: "nft add chain ip filter input { type filter hook input priority 0; }"
+      when: "'filter' in nft_tables.stdout"
+      ignore_errors: true
 
     - name: Agregar regla para permitir tráfico NTP en nftables si está en uso
       ansible.builtin.command: "nft add rule ip filter input udp dport 123 accept"
-      when: "'filter' in nft_status.stdout"
+      when: "'filter' in nft_tables.stdout"
       ignore_errors: true
 
     - name: Verificar estado de chronyd
@@ -63,14 +70,14 @@
       register: chronyd_status
       changed_when: false
 
+    - name: Mostrar estado de sincronización de chronyd
+      debug:
+        var: chronyd_status.stdout
+
     - name: Verificar fuentes de tiempo de chronyd
       ansible.builtin.command: "chronyc sources -v"
       register: chronyd_sources
       changed_when: false
-
-    - name: Mostrar estado de sincronización de chronyd
-      debug:
-        var: chronyd_status.stdout
 
     - name: Mostrar fuentes de sincronización de chronyd
       debug:
