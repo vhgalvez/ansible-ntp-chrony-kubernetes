@@ -2,7 +2,7 @@
 - name: Configurar NTP en el Servidor FreeIPA
   hosts: freeipa_servers
   become: yes
-  gather_facts: no  # Evita errores en sistemas minimalistas
+  gather_facts: no # Evita errores en sistemas minimalistas
 
   tasks:
     - name: Verificar sistema operativo en FreeIPA
