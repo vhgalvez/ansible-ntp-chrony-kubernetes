@@ -50,7 +50,7 @@
       changed_when: false
 
     - name: Verificar si el puerto 123 está abierto en FreeIPA
-      ansible.builtin.command: "ss -tulpn | grep ':123' || true"
+      ansible.builtin.command: "netstat -tulpn | grep ':123' || true"
       register: ntp_port
       changed_when: false
       ignore_errors: true
