@@ -24,7 +24,10 @@
         dest: /etc/chrony.conf
         content: |
           pool europe.pool.ntp.org iburst
-          server 10.17.3.11 iburst prefer
+          server time.netzwerge.de iburst prefer
+          server x1.ncomputers.org iburst
+          server mail.somenet.org iburst
+          server ip99.mikrocom.sk iburst
           allow 10.17.3.0/24
           allow 10.17.4.0/24
           local stratum 10
@@ -60,9 +63,22 @@
       register: chronyd_status
       changed_when: false
 
+    - name: Verificar fuentes de tiempo de chronyd
+      ansible.builtin.command: "chronyc sources -v"
+      register: chronyd_sources
+      changed_when: false
+
     - name: Mostrar estado de sincronización de chronyd
       debug:
         var: chronyd_status.stdout
+
+    - name: Mostrar fuentes de sincronización de chronyd
+      debug:
+        var: chronyd_sources.stdout
+
+    - name: Forzar sincronización inmediata de NTP
+      ansible.builtin.command: "chronyc makestep"
+      changed_when: false
 
   handlers:
     - name: Reiniciar chronyd
