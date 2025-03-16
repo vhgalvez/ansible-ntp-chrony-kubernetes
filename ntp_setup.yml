@@ -2,24 +2,24 @@
 - name: Configurar NTP en el Servidor FreeIPA
   hosts: freeipa_servers
   become: yes
-  gather_facts: no  # Evita errores por falta de Python en sistemas minimalistas
+  gather_facts: no  # Evita errores en sistemas minimalistas
 
   tasks:
-    - name: Verificar sistema operativo en FreeIPA para asegurarse de que es compatible
+    - name: Verificar sistema operativo en FreeIPA
       ansible.builtin.raw: "hostnamectl"
       register: os_check
       ignore_errors: true
 
-    - name: Mostrar información de sistema operativo (para depuración)
+    - name: Mostrar información de sistema operativo
       debug:
         var: os_check.stdout
 
-    - name: Instalar chrony en FreeIPA (Servidor NTP)
+    - name: Instalar chrony en FreeIPA
       ansible.builtin.yum:
         name: chrony
         state: present
 
-    - name: Configurar chrony en FreeIPA para servir como NTP y permitir acceso a la red
+    - name: Configurar chrony en FreeIPA como servidor NTP
       ansible.builtin.copy:
         dest: /etc/chrony.conf
         content: |
@@ -27,8 +27,7 @@
           server 10.17.3.11 iburst prefer
           allow 10.17.3.0/24
           allow 10.17.4.0/24
-          local stratum 10
-          manual
+          local stratum 10 orphan
       notify:
         - Reiniciar chronyd
 
@@ -42,44 +41,30 @@
       ansible.builtin.command: "chronyc reload sources"
       changed_when: false
 
+    - name: Forzar selección de fuentes NTP en chronyd
+      ansible.builtin.command: "chronyc reselect sources"
+      changed_when: false
+
     - name: Forzar sincronización inmediata de NTP
       ansible.builtin.command: "chronyc makestep"
       changed_when: false
 
-    - name: Abrir puerto NTP en el firewall de FreeIPA (firewalld)
+    - name: Verificar si el puerto 123 está abierto en FreeIPA
+      ansible.builtin.command: "ss -tulpn | grep :123"
+      register: ntp_port
+      changed_when: false
+      ignore_errors: true
+
+    - name: Mostrar estado del puerto 123 en FreeIPA
+      debug:
+        var: ntp_port.stdout_lines
+
+    - name: Abrir puerto NTP en el firewall de FreeIPA
       ansible.builtin.firewalld:
         service: ntp
         permanent: true
         immediate: yes
         state: enabled
-
-    # 🔹 VERIFICAR Y CREAR REGLAS NFTABLES 🔹
-    - name: Verificar si nftables está en uso
-      ansible.builtin.command: "nft list tables"
-      register: nft_tables
-      changed_when: false
-      ignore_errors: true
-
-    - name: Crear tabla filter en nftables si no existe
-      ansible.builtin.command: "nft add table ip filter"
-      when: "'filter' not in nft_tables.stdout"
-      ignore_errors: true
-
-    - name: Verificar existencia de la cadena input en nftables
-      ansible.builtin.command: "nft list chain ip filter input"
-      register: nft_chains
-      changed_when: false
-      ignore_errors: true
-
-    - name: Agregar cadena input en nftables si falta
-      ansible.builtin.command: "nft add chain ip filter input { type filter hook input priority 0; }"
-      when: "'No such file or directory' in nft_chains.stderr"
-      ignore_errors: true
-
-    - name: Agregar regla para permitir tráfico NTP en nftables si está en uso
-      ansible.builtin.command: "nft add rule ip filter input udp dport 123 accept"
-      when: "'filter' in nft_tables.stdout"
-      ignore_errors: true
 
     - name: Verificar estado de chronyd
       ansible.builtin.command: "chronyc tracking"
