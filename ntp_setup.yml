@@ -2,7 +2,7 @@
 - name: Configurar NTP en el Servidor FreeIPA
   hosts: freeipa_servers
   become: yes
-  gather_facts: no # Evita errores por falta de Python en sistemas minimalistas
+  gather_facts: no  # Evita errores por falta de Python en sistemas minimalistas
 
   tasks:
     - name: Verificar sistema operativo en FreeIPA para asegurarse de que es compatible
@@ -44,6 +44,7 @@
         immediate: yes
         state: enabled
 
+    # 🔹 VERIFICAR Y CREAR REGLAS NFTABLES 🔹
     - name: Verificar si nftables está en uso
       ansible.builtin.command: "nft list tables"
       register: nft_tables
@@ -56,13 +57,19 @@
       ignore_errors: true
 
     - name: Crear cadena input en nftables si no existe
+      ansible.builtin.command: "nft list chains table ip filter"
+      register: nft_chains
+      changed_when: false
+      ignore_errors: true
+
+    - name: Agregar cadena input en nftables si falta
       ansible.builtin.command: "nft add chain ip filter input { type filter hook input priority 0; }"
-      when: "'filter' in nft_tables.stdout"
+      when: "'input' not in nft_chains.stdout"
       ignore_errors: true
 
     - name: Agregar regla para permitir tráfico NTP en nftables si está en uso
       ansible.builtin.command: "nft add rule ip filter input udp dport 123 accept"
-      when: "'filter' in nft_tables.stdout"
+      when: "'filter' in nft_tables.stdout and 'input' in nft_chains.stdout"
       ignore_errors: true
 
     - name: Verificar estado de chronyd
