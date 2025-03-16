@@ -5,6 +5,7 @@
   gather_facts: no # Evita errores en sistemas minimalistas
 
   tasks:
+  
     - name: Verificar sistema operativo en FreeIPA
       ansible.builtin.raw: "hostnamectl"
       register: os_check
@@ -13,6 +14,10 @@
     - name: Mostrar información de sistema operativo
       debug:
         var: os_check.stdout
+    - name: Instalar net-tools en FreeIPA
+      ansible.builtin.package:
+        name: net-tools
+        state: present
 
     - name: Instalar chrony en FreeIPA
       ansible.builtin.yum:
