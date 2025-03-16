@@ -2,7 +2,7 @@
 - name: Configurar NTP en el Servidor FreeIPA
   hosts: freeipa_servers
   become: yes
-  gather_facts: no # Desactiva la recopilación de datos para evitar el requisito de Python
+  gather_facts: no # Evita errores por falta de Python en sistemas minimalistas
 
   tasks:
     - name: Verificar sistema operativo en FreeIPA para asegurarse de que es compatible
@@ -14,9 +14,10 @@
       debug:
         var: os_check.stdout
 
-    - name: Instalar chrony en FreeIPA (Servidor NTP) si es Rocky Linux
-      ansible.builtin.raw: "dnf install -y chrony"
-      when: "'Rocky Linux' in os_check.stdout"
+    - name: Instalar chrony en FreeIPA (Servidor NTP)
+      ansible.builtin.yum:
+        name: chrony
+        state: present
 
     - name: Configurar chrony en FreeIPA para servir como NTP y permitir acceso a la red
       ansible.builtin.copy:
@@ -24,7 +25,9 @@
         content: |
           pool europe.pool.ntp.org iburst
           server 10.17.3.11 iburst prefer
-          allow 10.17.0.0/16
+          allow 10.17.3.0/24
+          allow 10.17.4.0/24
+          local stratum 10
       notify:
         - Reiniciar chronyd
 
@@ -40,6 +43,26 @@
         permanent: true
         immediate: yes
         state: enabled
+
+    - name: Verificar si nftables está en uso
+      ansible.builtin.command: "nft list ruleset"
+      register: nft_status
+      ignore_errors: true
+      changed_when: false
+
+    - name: Agregar regla para permitir tráfico NTP en nftables si está en uso
+      ansible.builtin.command: "nft add rule ip filter input udp dport 123 accept"
+      when: "'filter' in nft_status.stdout"
+      ignore_errors: true
+
+    - name: Verificar estado de chronyd
+      ansible.builtin.command: "chronyc tracking"
+      register: chronyd_status
+      changed_when: false
+
+    - name: Mostrar estado de sincronización de chronyd
+      debug:
+        var: chronyd_status.stdout
 
   handlers:
     - name: Reiniciar chronyd
