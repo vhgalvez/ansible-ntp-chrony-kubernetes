@@ -28,6 +28,7 @@
           allow 10.17.3.0/24
           allow 10.17.4.0/24
           local stratum 10
+          manual
       notify:
         - Reiniciar chronyd
 
@@ -36,6 +37,14 @@
         name: chronyd
         enabled: true
         state: started
+
+    - name: Recargar fuentes de tiempo en chronyd
+      ansible.builtin.command: "chronyc reload sources"
+      changed_when: false
+
+    - name: Forzar sincronización inmediata de NTP
+      ansible.builtin.command: "chronyc makestep"
+      changed_when: false
 
     - name: Abrir puerto NTP en el firewall de FreeIPA (firewalld)
       ansible.builtin.firewalld:
@@ -56,20 +65,20 @@
       when: "'filter' not in nft_tables.stdout"
       ignore_errors: true
 
-    - name: Crear cadena input en nftables si no existe
-      ansible.builtin.command: "nft list chains table ip filter"
+    - name: Verificar existencia de la cadena input en nftables
+      ansible.builtin.command: "nft list chain ip filter input"
       register: nft_chains
       changed_when: false
       ignore_errors: true
 
     - name: Agregar cadena input en nftables si falta
       ansible.builtin.command: "nft add chain ip filter input { type filter hook input priority 0; }"
-      when: "'input' not in nft_chains.stdout"
+      when: "'No such file or directory' in nft_chains.stderr"
       ignore_errors: true
 
     - name: Agregar regla para permitir tráfico NTP en nftables si está en uso
       ansible.builtin.command: "nft add rule ip filter input udp dport 123 accept"
-      when: "'filter' in nft_tables.stdout and 'input' in nft_chains.stdout"
+      when: "'filter' in nft_tables.stdout"
       ignore_errors: true
 
     - name: Verificar estado de chronyd
@@ -89,10 +98,6 @@
     - name: Mostrar fuentes de sincronización de chronyd
       debug:
         var: chronyd_sources.stdout
-
-    - name: Forzar sincronización inmediata de NTP
-      ansible.builtin.command: "chronyc makestep"
-      changed_when: false
 
   handlers:
     - name: Reiniciar chronyd
