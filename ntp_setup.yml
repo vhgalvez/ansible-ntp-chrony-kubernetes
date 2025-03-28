@@ -32,6 +32,7 @@
           server 10.17.3.11 iburst prefer
           allow 10.17.3.0/24
           allow 10.17.4.0/24
+          allow 10.17.5.0/24
           local stratum 10 orphan
       notify:
         - Reiniciar chronyd
