@@ -47,7 +47,7 @@ cd ansible-ntp-freeipa-kubernetes
 Ejecuta el playbook principal para configurar NTP en el servidor FreeIPA.
 
 ```bash
-ansible-playbook -i inventory.ini ntp_setup.yml
+sudo ansible-playbook -i inventory.ini ntp_setup.yml
 ```
 
 ### Verificar Sincronización
@@ -55,7 +55,7 @@ ansible-playbook -i inventory.ini ntp_setup.yml
 En el servidor FreeIPA, puedes verificar el estado de sincronización de la hora usando:
 
 ```bash
-timedatectl status
+sudo timedatectl status
 ```
 
 ## Estructura del Proyecto
@@ -147,7 +147,7 @@ Verifica que el servicio esté en ejecución y esté contactando al servidor NTP
 ### Verificar la Sincronización de la Hora con `timedatectl`
 
 ```bash
-timedatectl status
+sudo timedatectl status
 ```
 
 Confirma que `System clock synchronized` esté en `yes` y que `NTP service` esté activo.
