@@ -29,11 +29,15 @@
       ansible.builtin.copy:
         dest: /etc/chrony.conf
         content: |
+          # Servidores NTP externos
           pool europe.pool.ntp.org iburst
+          # Servidor NTP local preferido
           server 10.17.3.11 iburst prefer
+          # Permitir acceso desde subredes locales
           allow 10.17.3.0/24
           allow 10.17.4.0/24
           allow 10.17.5.0/24
+          # Configuración adicional
           local stratum 10 orphan
       notify:
         - Reiniciar chronyd
