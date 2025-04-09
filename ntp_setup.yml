@@ -60,13 +60,29 @@
       ansible.builtin.command: "chronyc makestep"
       changed_when: false
 
-    # Eliminada la parte que abre el puerto 123 en nftables
-    # - name: Abrir puerto NTP en el firewall de FreeIPA usando nftables
-    #   ansible.builtin.raw: |
-    #     nft add table inet filter
-    #     nft add chain inet filter input { type filter hook input priority 0 \; }
-    #     nft add rule inet filter input udp dport 123 accept
-    #   ignore_errors: true
+# Eliminada la parte que abre el puerto 123 en nftables (opcional)
+#    - name: Abrir puerto NTP en el firewall de FreeIPA usando nftables
+#      ansible.builtin.raw: |
+#        nft add table inet filter
+#        nft add chain inet filter input { type filter hook input priority 0 \; }
+#        nft add rule inet filter input udp dport 123 accept
+#      ignore_errors: true
+
+#    - name: Instalar nftables (comentado por si se necesita en el futuro)
+#      ansible.builtin.yum:
+#        name: nftables
+#        state: present
+#      # Cuando sea necesario habilitar nftables, descomentar las siguientes líneas:
+#      # notify:
+#      #   - Habilitar nftables
+#      #   - Abrir puerto NTP en nftables
+
+#    - name: Habilitar nftables (comentado por si se necesita en el futuro)
+#      ansible.builtin.systemd:
+#        name: nftables
+#        enabled: true
+#        state: started
+#      # Cuando sea necesario habilitar nftables, descomentar esta sección
 
     - name: Verificar estado de chronyd
       ansible.builtin.command: "chronyc tracking"
