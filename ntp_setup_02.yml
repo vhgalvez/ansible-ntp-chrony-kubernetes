@@ -14,7 +14,6 @@
     - name: Mostrar información de sistema operativo
       debug:
         var: os_check.stdout
-
     - name: Instalar net-tools en FreeIPA
       ansible.builtin.package:
         name: net-tools
@@ -66,13 +65,12 @@
       debug:
         var: ntp_port.stdout_lines
 
-    - name: Abrir puerto NTP en el firewall de FreeIPA usando nftables
-      ansible.builtin.nft:
-        table: inet
-        chain: input
-        rule: "udp dport 123 accept"
-        state: present
-        immediate: true
+    - name: Abrir puerto NTP en el firewall de FreeIPA
+      ansible.builtin.firewalld:
+        service: ntp
+        permanent: true
+        immediate: yes
+        state: enabled
 
     - name: Verificar estado de chronyd
       ansible.builtin.command: "chronyc tracking"
