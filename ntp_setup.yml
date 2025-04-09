@@ -5,7 +5,7 @@
   gather_facts: no  # Evita errores en sistemas minimalistas
 
   tasks:
-  
+
     - name: Verificar sistema operativo en FreeIPA
       ansible.builtin.raw: "hostnamectl"
       register: os_check
@@ -56,22 +56,13 @@
       ansible.builtin.command: "chronyc makestep"
       changed_when: false
 
-    - name: Verificar si el puerto 123 está abierto en FreeIPA
-      ansible.builtin.command: "netstat -tulpn | grep ':123' || true"
-      register: ntp_port
-      changed_when: false
-      ignore_errors: true
-
-    - name: Mostrar estado del puerto 123 en FreeIPA
-      debug:
-        var: ntp_port.stdout_lines
-
-    - name: Abrir puerto NTP en el firewall de FreeIPA usando nftables
-      ansible.builtin.raw: |
-        nft add table inet filter
-        nft add chain inet filter input { type filter hook input priority 0 \; }
-        nft add rule inet filter input udp dport 123 accept
-      ignore_errors: true
+    # Eliminada la parte que abre el puerto 123 en nftables
+    # - name: Abrir puerto NTP en el firewall de FreeIPA usando nftables
+    #   ansible.builtin.raw: |
+    #     nft add table inet filter
+    #     nft add chain inet filter input { type filter hook input priority 0 \; }
+    #     nft add rule inet filter input udp dport 123 accept
+    #   ignore_errors: true
 
     - name: Verificar estado de chronyd
       ansible.builtin.command: "chronyc tracking"
