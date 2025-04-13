@@ -1,12 +1,12 @@
 ---
 - name: Configurar NTP en el Servidor NTP
-  hosts: freeipa_servers
+  hosts: infra-cluster
   become: yes
   gather_facts: no  # Evita errores en sistemas minimalistas
 
   tasks:
 
-    - name: Verificar sistema operativo en FreeIPA
+    - name: Verificar sistema operativo en infra-cluster
       ansible.builtin.raw: "hostnamectl"
       register: os_check
       ignore_errors: true
@@ -20,12 +20,12 @@
         name: net-tools
         state: present
 
-    - name: Instalar chrony en FreeIPA
+    - name: Instalar chrony en infra-cluster
       ansible.builtin.yum:
         name: chrony
         state: present
 
-    - name: Configurar chrony en FreeIPA como servidor NTP
+    - name: Configurar chrony en infra-cluster como servidor NTP
       ansible.builtin.copy:
         dest: /etc/chrony.conf
         content: |
@@ -42,7 +42,7 @@
       notify:
         - Reiniciar chronyd
 
-    - name: Iniciar y habilitar chronyd en FreeIPA
+    - name: Iniciar y habilitar chronyd en infra-cluster
       ansible.builtin.systemd:
         name: chronyd
         enabled: true
@@ -60,7 +60,7 @@
       ansible.builtin.command: "chronyc makestep"
       changed_when: false
 
-# Eliminada la parte que abre el puerto 123 en nftables (opcional)
+# nftables configuracion la parte que abre el puerto 123 en nftables (opcional)
 #    - name: Abrir puerto NTP en el firewall de FreeIPA usando nftables
 #      ansible.builtin.raw: |
 #        nft add table inet filter
