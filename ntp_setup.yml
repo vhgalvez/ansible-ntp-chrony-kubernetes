@@ -15,7 +15,7 @@
       debug:
         var: os_check.stdout
 
-    - name: Instalar net-tools en FreeIPA
+    - name: Instalar net-tools en infra-cluster
       ansible.builtin.package:
         name: net-tools
         state: present
@@ -61,7 +61,7 @@
       changed_when: false
 
 # nftables configuracion la parte que abre el puerto 123 en nftables (opcional)
-#    - name: Abrir puerto NTP en el firewall de FreeIPA usando nftables
+#    - name: Abrir puerto NTP en el firewall de infra-cluster usando nftables
 #      ansible.builtin.raw: |
 #        nft add table inet filter
 #        nft add chain inet filter input { type filter hook input priority 0 \; }
